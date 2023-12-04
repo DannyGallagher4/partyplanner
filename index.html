@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sequel Creator</title>
+    <style>
+        .response-text {
+            white-space: pre-line;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Sequel Creator</h1>
+
+    <form method="post" action="/">
+        <label for="prompt"> Input --> </label>
+        <input type="text" id="prompt" name="prompt" placeholder="Type your prompt...">
+
+        <br>
+
+        <input type="submit" value="Submit">
+    </form>
+
+
+    {% if history %}
+    <div>
+        <h2>Log</h2>
+        {% for item in history %}
+        <div class="history-item">
+            <h3>Input:</h3>
+            <p class="response-text">{{ item[0] }}</p> <!-- Display previous input -->
+            <h3>Response:</h3>
+            <p class="response-text">{{ item[1] }}</p> <!-- Display previous response -->
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</body>
+</html>
