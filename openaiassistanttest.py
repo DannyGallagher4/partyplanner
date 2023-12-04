@@ -52,6 +52,9 @@ def pretty_print_conversation(messages):
 def add_numbers(num1, num2):
     return num1+num2
 
+def multply_numbers(num1, num2):
+    return num1*num2
+
 tools = [
     {
         "type": "function",
@@ -73,11 +76,87 @@ tools = [
                 "required": ["num1", "num2"],
             },
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "multiply_numbers",
+            "description": "multiples together 2 numbers",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "num1": {
+                        "type": "integer",
+                        "description": "the first number to be multiplied",
+                    },
+                    "num2": {
+                        "type": "integer",
+                        "description": "the second number to be multipled",
+                    },
+                },
+                "required": ["num1", "num2"],
+            },
+        }
     }
 ]
 
 messages = []
+
+running = True
+#messages.append({"role": "system", "content": "You are a helpful party planning assistant. Help the user with their goal of planning a good party for their specific occasion."})
 messages.append({"role": "system", "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."})
+print("Input something that you need help with for your party and type DONE when done.")
+
+while running:
+    user_input = input("User: ")
+
+    if user_input.lower() == "done":
+        running=False
+        break
+    messages.append({"role": "user", "content": user_input})
+    chat_response = chat_completion_request(
+        messages, tools=tools
+    )
+    #print(chat_response.json())
+    assistant_message = chat_response.json()["choices"][0]["message"]
+    messages.append(assistant_message)
+    if assistant_message["content"] != None:
+        print("AI: " + str(assistant_message["content"]))
+
+    if "tool_calls" in assistant_message and assistant_message["tool_calls"]:
+        # Iterate through tool_calls to find add_numbers function call
+        for tool_call in assistant_message["tool_calls"]:
+            if tool_call["type"] == "function" and tool_call["function"]["name"] == "add_numbers":
+                # Extract and print the result
+                arguments = json.loads(tool_call["function"]["arguments"])
+                result = add_numbers(arguments["num1"], arguments["num2"])
+
+                tool_response = {
+                    "role": "tool",
+                    "name": "add_numbers",
+                    "content": f"The result is {result}",
+                    "tool_call_id": tool_call["id"],
+                }
+                messages.append(tool_response)
+
+                print(f"AI: {result}")
+
+            elif tool_call["type"] == "function" and tool_call["function"]["name"] == "multiply_numbers":
+                # Extract and print the result
+                arguments = json.loads(tool_call["function"]["arguments"])
+                result = multply_numbers(arguments["num1"], arguments["num2"])
+
+                tool_response = {
+                    "role": "tool",
+                    "name": "add_numbers",
+                    "content": f"The result is {result}",
+                    "tool_call_id": tool_call["id"],
+                }
+                messages.append(tool_response)
+
+                print(f"AI: {result}")
+
+"""
 messages.append({"role": "user", "content": "Can you add together 2 numbers for me?"})
 chat_response = chat_completion_request(
     messages, tools=tools
@@ -103,3 +182,4 @@ if "tool_calls" in assistant_message and assistant_message["tool_calls"]:
             arguments = json.loads(tool_call["function"]["arguments"])
             result = add_numbers(arguments["num1"], arguments["num2"])
             print(f"Result of add_numbers: {result}")
+"""
