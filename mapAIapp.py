@@ -4,7 +4,7 @@ import openai
 import requests
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 from termcolor import colored
-from urllib.parse import unquote
+from urllib.parse import unquote, quote
 
 mapbox_access_token = 'pk.eyJ1Ijoia2xvZGFuIiwiYSI6ImNscG16cXFrMjAxaW8ya29pbHM3ejI4bXAifQ.vfQJewHUm3kngAd22BCjoQ'
 
@@ -112,7 +112,7 @@ tools = [
                     },
                     "num2": {
                         "type": "integer",
-                        "description": "the second number to be multipled",
+                        "description": "the second number to be multiplied",
                     },
                 },
                 "required": ["num1", "num2"],
@@ -150,6 +150,7 @@ def callAI():
     if request.method == 'POST':
         prompt = unquote(request.form['prompt'])
         output = ""
+        data_to_return = ""
         isMap = False
         try:
             messages.append({"role": "system", "content": "Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."})
@@ -205,7 +206,7 @@ def callAI():
                         print("5")
                         arguments = json.loads(tool_call["function"]["arguments"])
                         print("6")
-                        result = go_somewhere(arguments["place_name"])
+                        result = go_somewhere(quote(arguments["place_name"]))
                         print(result)
                         print("7")
                         isMap = True
@@ -220,12 +221,16 @@ def callAI():
                         print(f"AI: {result}")
                         print()
                         output += tool_response["content"]+"\n"
+
+                        data_to_return = {'lng': result['lng'], 'lat': result['lat'], 'name': result['name']}
+                        
                     
         except Exception as e:
                 print(f"An error occurred: {e}")
         history.append((prompt, output))
+    print({'history': (prompt, output)})
     print(jsonify(history))
-    return jsonify({"history": history})
+    return jsonify({'history': (prompt, output)})
 
 if __name__ == '__main__':
     app.run(debug=True)

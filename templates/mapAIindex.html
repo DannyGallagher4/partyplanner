@@ -54,7 +54,7 @@
 
     <div id = "main-container">
 
-        <form method="post" action="/">
+        <form method="post" onsubmit="return false">
             <label for="prompt"> Input --> </label>
             <input type="text" id="prompt" name="prompt" placeholder="Type your prompt...">
 
@@ -68,24 +68,27 @@
         </div>
     </div>
 
-
-    {% if history %}
-    <div>
-        <h2>Log</h2>
-        {% for item in history %}
-        <div class="history-item">
-            <h3>Input:</h3>
-            <p class="response-text">{{ item[0] }}</p> <!-- Display previous input -->
-            <h3>Response:</h3>
-            <p class="response-text">{{ item[1] }}</p> <!-- Display previous response -->
+    <div id = "log-container">
+        {% if history %}
+        <div>
+            <h2>Log</h2>
+            {% for item in history %}
+            <div class="history-item">
+                <h3>Input:</h3>
+                <p class="response-text">{{ item[0] }}</p> <!-- Display previous input -->
+                <h3>Response:</h3>
+                <p class="response-text">{{ item[1] }}</p> <!-- Display previous response -->
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+        {% endif %}
     </div>
-    {% endif %}
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js'></script>
     <script>
 
         mapboxgl.accessToken = 'pk.eyJ1Ijoia2xvZGFuIiwiYSI6ImNscG16cXFrMjAxaW8ya29pbHM3ejI4bXAifQ.vfQJewHUm3kngAd22BCjoQ';
+
+        
 
         var map = new mapboxgl.Map({
             container: 'map-container',
@@ -103,40 +106,81 @@
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'prompt=' + user_input
             })
-            .then(response => {
-                if (!response.ok) {
-                    console.log("oh no")
-                    throw new Error('Network response was not ok');
-                }
-                console.log("hello")
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 console.log(data); // Log the data received
-                history = data["history"];
-                console.log(history)
-                if(data["history"][-1][1].contains("longitude")){
+                console.log(data['history'][0])
+                updateLog(data['history'][0], data['history'][1])
+                console.log(data['history'][1].includes("longitude"))
+                console.log(data['history'][1].includes("latitude"))
+                console.log(data['history'][1].includes("The coordinates found are"))
+                if(data['history'][1].includes("longitude") && data['history'][1].includes("latitude") && data['history'][1].includes("The coordinates found are")){
+
                     document.getElementById("topthing").innerHTML = "<h1>hello</h1>"
-                    var coordinatesPart = inputString.split(":")[1].trim();
-                    var coordinatesArray = coordinatesPart.split(",");
-                    var longitude = parseFloat(coordinatesArray[0].trim());
-                    var latitude = parseFloat(coordinatesArray[1].trim());
-                    var name = coordinatesArray[2].trim();
-                    console.log(longitude + " " + latitude + " " + name)
-                    map.flyTo({ center: [longitude, latitude], zoom: 14 });
-                    var popup = new mapboxgl.Popup()
-                        .setHTML('<h3>'+name+'</h3>');
+                    var inputString = data['history'][1]
 
-                    var coordinates = [longitude, latitude]
-                    new mapboxgl.Marker()
-                        .setLngLat(coordinates)
-                        .setPopup(popup)
-                        .addTo(map);
+                    var regex = /longitude:\s*(-?\d+\.\d+),\s*latitude:\s*(-?\d+\.\d+),\s*at\s*([^\n]+)/;
 
-                    popup.addTo(map)
+                    var match = inputString.match(regex);
+
+                    if (match && match.length === 4) {
+                        var longitude = parseFloat(match[1]);
+                        var latitude = parseFloat(match[2]);
+                        var name = match[3].trim();
+
+                        console.log(longitude + " " + latitude + " " + name)
+                        map.flyTo({ center: [longitude, latitude], zoom: 14 });
+                        var popup = new mapboxgl.Popup()
+                            .setHTML('<h3>'+name+'</h3>');
+
+                        var coordinates = [longitude, latitude]
+                        new mapboxgl.Marker()
+                            .setLngLat(coordinates)
+                            .setPopup(popup)
+                            .addTo(map);
+
+                        popup.addTo(map)    
+                    } else {
+                        console.error("Invalid input format");
+                    }
+                    
+
+                } else {
+                    document.getElementById("topthing").innerHTML = "<h1>continue</h1>"
                 }
             })
             .catch(error => console.error('Fetch error:', error));
+        }
+
+        function updateLog(input, response) {
+            var logContainer = document.getElementById("log-container");
+
+            // Create a new history item
+            var historyItem = document.createElement("div");
+            historyItem.classList.add("history-item");
+
+            // Input section
+            var inputHeader = document.createElement("h3");
+            inputHeader.textContent = "Input:";
+            var inputParagraph = document.createElement("p");
+            inputParagraph.classList.add("response-text");
+            inputParagraph.textContent = input;
+
+            // Response section
+            var responseHeader = document.createElement("h3");
+            responseHeader.textContent = "Response:";
+            var responseParagraph = document.createElement("p");
+            responseParagraph.classList.add("response-text");
+            responseParagraph.textContent = response;
+
+            // Append elements to the history item
+            historyItem.appendChild(inputHeader);
+            historyItem.appendChild(inputParagraph);
+            historyItem.appendChild(responseHeader);
+            historyItem.appendChild(responseParagraph);
+
+            // Append the history item to the log container
+            logContainer.appendChild(historyItem);
         }
     </script>
 
