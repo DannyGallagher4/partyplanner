@@ -52,6 +52,7 @@
             .setHTML('<h3>'+data.name+'</h3>');
 
         var coordinates = [data.lng, data.lat]
+        
         new mapboxgl.Marker()
             .setLngLat(coordinates)
             .setPopup(popup)
