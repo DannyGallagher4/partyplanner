@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Party Planner</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #main-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        form {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 400px;
+            margin-right: 20px;
+        }
+
+        #map-container {
+            flex: 1;
+            max-height: 60vh; /* Set a maximum height */
+            overflow-y: auto; /* Enable vertical scrolling if content overflows */
+            position: relative;
+        }
+
+        .response-text {
+            white-space: pre-line;
+        }
+    </style>
+</head>
+<body>
+    
+    <h1 id = "topthing">Party Planner</h1>
+
+    <div id = "main-container">
+
+        <form method="post" action="/">
+            <label for="prompt"> Input --> </label>
+            <input type="text" id="prompt" name="prompt" placeholder="Type your prompt...">
+
+            <br>
+
+            <input type="submit" value="Submit" onclick="callAI()">
+        </form>
+
+        <div id="map-container">
+            <!-- Mapbox map goes here -->
+        </div>
+    </div>
+
+
+    {% if history %}
+    <div>
+        <h2>Log</h2>
+        {% for item in history %}
+        <div class="history-item">
+            <h3>Input:</h3>
+            <p class="response-text">{{ item[0] }}</p> <!-- Display previous input -->
+            <h3>Response:</h3>
+            <p class="response-text">{{ item[1] }}</p> <!-- Display previous response -->
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js'></script>
+    <script>
+
+        mapboxgl.accessToken = 'pk.eyJ1Ijoia2xvZGFuIiwiYSI6ImNscG16cXFrMjAxaW8ya29pbHM3ejI4bXAifQ.vfQJewHUm3kngAd22BCjoQ';
+
+        var map = new mapboxgl.Map({
+            container: 'map-container',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [-74.5, 40],
+            zoom: 9
+        });
+
+        function callAI(){
+            var user_input = document.getElementById('prompt').value;
+            var encodedPlace = encodeURIComponent(user_input)
+            console.log("got here")
+            fetch('/callAI', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'prompt=' + user_input
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.log("oh no")
+                    throw new Error('Network response was not ok');
+                }
+                console.log("hello")
+                return response.json();
+            })
+            .then(data => {
+                console.log(data); // Log the data received
+                history = data["history"];
+                console.log(history)
+                if(data["history"][-1][1].contains("longitude")){
+                    document.getElementById("topthing").innerHTML = "<h1>hello</h1>"
+                    var coordinatesPart = inputString.split(":")[1].trim();
+                    var coordinatesArray = coordinatesPart.split(",");
+                    var longitude = parseFloat(coordinatesArray[0].trim());
+                    var latitude = parseFloat(coordinatesArray[1].trim());
+                    var name = coordinatesArray[2].trim();
+                    console.log(longitude + " " + latitude + " " + name)
+                    map.flyTo({ center: [longitude, latitude], zoom: 14 });
+                    var popup = new mapboxgl.Popup()
+                        .setHTML('<h3>'+name+'</h3>');
+
+                    var coordinates = [longitude, latitude]
+                    new mapboxgl.Marker()
+                        .setLngLat(coordinates)
+                        .setPopup(popup)
+                        .addTo(map);
+
+                    popup.addTo(map)
+                }
+            })
+            .catch(error => console.error('Fetch error:', error));
+        }
+    </script>
+
+</body>
+</html>
