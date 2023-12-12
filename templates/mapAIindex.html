@@ -6,11 +6,10 @@
     <title>Party Planner</title>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css' rel='stylesheet' />
     <style>
-
         h1 {
             text-align: center;
         }
-
+/*
         #main-container{
             display: flex; 
             flex-direction: column; 
@@ -19,13 +18,18 @@
             height: 100vh; 
             margin: 0;
         }
-
+*/
         #map-container {
-            flex: 1;
-            position: relative;
-            top: 200px;
-            width: 100%;
-            height: calc(100% - 200px);
+            position: absolute;
+            top: 150px;
+            align-items: center;
+            width: 60%;
+            height: 500px;
+            left: 20%;
+        }
+
+        #log-container{
+            margin-top: 550px;
         }
 
         .response-text {
